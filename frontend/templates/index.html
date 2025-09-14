@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>pyspark, django test</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+
+<div>
+    <select name="cmb_option" id="cmbOption">
+        <option value="X">Select a value</option>
+        {% for c in combo%}
+        <option value="{{c.key}}">{{c.label}}</option>
+        {% endfor %}
+    </select>
+
+</div>
+
+
+</body>
+</html>
