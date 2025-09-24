@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from pyspark.sql.functions import col, expr, desc
 import json
+from pyspark.sql import functions as F
 
 from .classes.ReportType import ReportType
 from front.SparkSessionSingleton import get_product_dataframe
@@ -45,7 +46,13 @@ def ml(request):
                     df_clean = df_clean.withColumn("final_price_int", expr("try_cast(final_price as double)"))
                     df_clean = df_clean.filter(col("final_price_int") >= 10).select("product_name", "final_price", "in_stock", "color", "size",   "root_category").limit(10)
                 case ReportType.MOST_POPULAR_COLOR.value:
-                    df_clean = df_clean.select("product_name", "final_price", "in_stock", "color", "size", "root_category").groupBy("color").count().orderBy(desc("count")).limit(10)
+                    df_clean = df_clean.groupBy("color") \
+                        .agg(
+                        F.count("*").alias("count"),
+                        F.first("product_name").alias("product_name")  # or use collect_list, etc.
+                    ) \
+                        .orderBy(F.desc("count")) \
+                        .limit(10)
                 case _:
                     df_clean = df_clean.orderBy(desc("final_price")).select("product_name", "final_price", "in_stock", "color", "size", "root_category").limit(0)
 
