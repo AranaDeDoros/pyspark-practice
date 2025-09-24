@@ -27,8 +27,13 @@ window.addEventListener('DOMContentLoaded', function(ev){
             graphicType = "doughnut";
             break;
             case "most popular color":
-            graphicTitle = "Most popular colors";
+            graphicTitle = "# of units per  most popular colors";
             graphicType  ="bar";
+            data =  {
+                labels: resp.map( p => p.product_name.substring(0,10)),
+                values: resp.map( p => p.count),
+            }
+
             break;
             case "most expensive":
             graphicTitle = "Most expensive colors";
@@ -38,7 +43,7 @@ window.addEventListener('DOMContentLoaded', function(ev){
             return;
         }
 
-            console.log(data, "<----")
+
                 const ctx = document.getElementById('sparkChart').getContext('2d');
                  sparkChart = new Chart(ctx, {
                     type: graphicType,
@@ -52,6 +57,10 @@ window.addEventListener('DOMContentLoaded', function(ev){
                             borderWidth: 1
                         }]
                     },
+                    options: {
+                        responsive: false,
+                        maintainAspectRatio: false
+                    }
              });
     })
 })
