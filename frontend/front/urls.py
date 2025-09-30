@@ -21,5 +21,6 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index),
-    path('ml/', views.ml),
+    path("ml/", views.ml, name="ml"),
+    path("ml/result/<str:task_id>/", views.ml_result, name="ml_result"),
 ]

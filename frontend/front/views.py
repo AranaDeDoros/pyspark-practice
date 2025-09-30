@@ -1,68 +1,51 @@
-# my_tennis_club/members/views.py
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from pyspark.sql.functions import col, expr, desc
+# views.py
 import json
-from pyspark.sql import functions as F
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 from .classes.ReportType import ReportType
-from front.SparkSessionSingleton import get_product_dataframe
-
+from front.tasks import process_products
+from celery.result import AsyncResult
 
 def index(request):
     combo = [
-            {"key": ReportType.NO_STOCK.value , "label":"No stock"},
-            {"key": ReportType.OVER_10.value , "label":"Over 10 usd" },
-            {"key": ReportType.MOST_POPULAR_COLOR.value, "label":"Most popular color"},
-            {"key": ReportType.MOST_EXPENSIVE.value, "label":"Most expensive"}
-        ]
-    return render(request,"index.html", {"combo":combo})
+        {"key": ReportType.NO_STOCK.value , "label":"No stock"},
+        {"key": ReportType.OVER_10.value , "label":"Over 10 usd" },
+        {"key": ReportType.MOST_POPULAR_COLOR.value, "label":"Most popular color"},
+        {"key": ReportType.MOST_EXPENSIVE.value, "label":"Most expensive"}
+    ]
+    return render(request,"index.html", {"combo": combo})
 
 @csrf_exempt
 def ml(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
 
-    df_clean = None
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            option = data.get('option')
-            df_clean = get_product_dataframe()
-            df_clean = df_clean.withColumn("final_price", expr("try_cast(final_price as double)"))
-            df_clean = df_clean.dropna(subset=["product_name", "final_price"])
-            df_clean = df_clean.fillna({
-                "color": "unknown",
-                "final_price": 0.0
-            })
-            #df_clean = df_clean.filter((col("final_price") >= 0) & (col("final_price").isNotNull()))
-            print("OPTION ", option)
-            match option:
-                case ReportType.NO_STOCK.value:
-                    print("no stockkkk")
-                    df_clean = df_clean.withColumn("in_stock_bool", expr("try_cast(in_stock as boolean)"))
-                    df_clean = df_clean.filter(col("in_stock_bool") == True).select("product_name", "final_price", "in_stock", "color",   "size", "root_category").limit(10)
-                case  ReportType.OVER_10.value:
-                    print("over 10")
-                    df_clean = df_clean.withColumn("final_price_int", expr("try_cast(final_price as double)"))
-                    df_clean = df_clean.filter(col("final_price_int") >= 10).select("product_name", "final_price", "in_stock", "color", "size",   "root_category").limit(10)
-                case ReportType.MOST_POPULAR_COLOR.value:
-                    df_clean = df_clean.groupBy("color") \
-                        .agg(
-                        F.count("*").alias("count"),
-                        F.first("product_name").alias("product_name")  # or use collect_list, etc.
-                    ) \
-                        .orderBy(F.desc("count")) \
-                        .limit(10)
-                case _:
-                    df_clean = df_clean.orderBy(desc("final_price")).select("product_name", "final_price", "in_stock", "color", "size", "root_category").limit(0)
+    try:
+        data = json.loads(request.body)
+        option = data.get("option")
 
-            json_result = df_clean.toJSON().collect()
-            data = [json.loads(row) for row in json_result]
-            return JsonResponse(data, safe=False)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        valid_options = {r.value for r in ReportType}
+        if option not in valid_options:
+            return JsonResponse({"error": "Invalid report option selected."}, status=400)
 
-    else:
-        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+        task = process_products.delay(option)
+        return JsonResponse({"task_id": task.id})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
+@csrf_exempt
+def ml_result(request, task_id):
+    res = AsyncResult(task_id)
 
+    if res.failed():
+        return JsonResponse({
+            "status": "failed",
+            "error": str(res.result) if res.result else "Unknown error"
+        }, status=500)
+
+    if res.ready():
+        return JsonResponse(res.result, safe=False)
+
+    return JsonResponse({"status": "pending"})

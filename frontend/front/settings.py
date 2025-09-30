@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'front.apps.FrontendConfig'
+   # 'front.apps.FrontendConfig'
 ]
 
 MIDDLEWARE = [
@@ -134,3 +134,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CELERY_BROKER_URL = "redis://default:NayW0Nun9FifKksvAw6uz7GXrlSwKBP0@redis-13903.c8.us-east-1-2.ec2.redns.redis-cloud.com:13903"
+CELERY_RESULT_BACKEND = "redis://default:NayW0Nun9FifKksvAw6uz7GXrlSwKBP0@redis-13903.c8.us-east-1-2.ec2.redns.redis-cloud.com:13903"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"

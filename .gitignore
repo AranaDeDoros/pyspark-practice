@@ -1,0 +1,9 @@
+frontend/front/__pycache__/*
+**/__pycache__/
+.env
+venv/
+venv310/
+.env/
+.env
+.idea
+frontend/run_env.bat
