@@ -10,7 +10,7 @@ from celery.result import AsyncResult
 
 def index(request):
     combo = [
-        {"key": ReportType.NO_STOCK.value , "label":"No stock"},
+        {"key": ReportType.ON_STOCK.value , "label":"On stock"},
         {"key": ReportType.OVER_10.value , "label":"Over 10 usd" },
         {"key": ReportType.MOST_POPULAR_COLOR.value, "label":"Most popular color"},
         {"key": ReportType.MOST_EXPENSIVE.value, "label":"Most expensive"}

@@ -12,14 +12,14 @@ from .classes.ReportType import ReportType
 @shared_task
 def process_products(option: str):
     try:
-        print("ctm||")
+        print("ctm||", option)
         df = get_product_dataframe()
 
         df = df.withColumn("final_price", col("final_price").cast("double"))
         df = df.dropna(subset=["product_name", "final_price"])
         df = df.fillna({"color": "unknown", "final_price": 0.0})
 
-        if option == ReportType.NO_STOCK.value:
+        if option == ReportType.ON_STOCK.value:
             df = df.withColumn("in_stock_clean", lower(trim(col("in_stock"))))
             df = df.filter(col("in_stock_clean") == "true")
             df = df.select("product_name", "final_price", "in_stock", "color", "size", "root_category").limit(10)

@@ -9,11 +9,9 @@ window.addEventListener('DOMContentLoaded', function(ev){
 
         if(sparkChart != null) sparkChart.destroy();
 
-        // Bloquear select y mostrar spinner
         cmbOption.disabled = true;
         spinner.style.display = "block";
 
-        // 1️⃣ Lanzar tarea Celery
         const launchReq = await fetch("ml/", {
             method: "POST",
             body: JSON.stringify({ option: ev.target.value }),
@@ -22,7 +20,6 @@ window.addEventListener('DOMContentLoaded', function(ev){
         const launchResp = await launchReq.json();
         const taskId = launchResp.task_id;
 
-        // 2️⃣ Polling
         const pollResult = async () => {
             const resReq = await fetch(`ml/result/${taskId}/`);
             const resJson = await resReq.json();
@@ -37,22 +34,23 @@ window.addEventListener('DOMContentLoaded', function(ev){
                 let resp = resJson;
                 let graphicTitle = "";
                 let data = {
-                    labels: resp.map(p => p.product_name ? p.product_name.substring(0,10) : p.color),
+                    labels: resp.map(p => p.product_name ? p.product_name.substring(0,50) + "..." : p.color),
                     values: resp.map(p => p.final_price ?? p.count ?? 0),
                 };
                 let graphicType = "";
-                let backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56'];
-
+                let backgroundColors = generateHexColors(10);
+                console.log("|||||", ev.target.value)
+                console.log("||||", data)
                 switch(ev.target.value){
-                    case "no_stock":
+                    case "on_stock":
                         graphicTitle = "Products without stock";
                         graphicType = "bar";
                         break;
-                    case "over_10usd":
+                    case "over_10_usd":
                         graphicTitle = "Stock > 10";
                         graphicType = "doughnut";
                         break;
-                    case "most popular color":
+                    case "most_popular_color":
                         graphicTitle = "# of units per most popular colors";
                         graphicType = "bar";
                         data = {
@@ -60,7 +58,7 @@ window.addEventListener('DOMContentLoaded', function(ev){
                             values: resp.map(p => p.count),
                         };
                         break;
-                    case "most expensive":
+                    case "most_expensive":
                         graphicTitle = "Most expensive colors";
                         graphicType = "bar";
                         break;
@@ -91,5 +89,19 @@ window.addEventListener('DOMContentLoaded', function(ev){
 
         pollResult();
     });
+
+function generateHexColors(n) {
+  const colors = [];
+
+  for (let i = 0; i < n; i++) {
+    const color = '#' + Math.floor(Math.random() * 0xffffff)
+      .toString(16)
+      .padStart(6, '0');
+    colors.push(color);
+  }
+
+  return colors;
+}
+
 
 });
