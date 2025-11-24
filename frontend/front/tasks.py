@@ -46,7 +46,7 @@ def process_products(option: str):
         return [json.loads(row) for row in json_result]
 
     except Exception as e:
-        print(f"❌ Error in process_products: {e}")
+        print(f" Error in process_products: {e}")
         return {"status": "failed", "error": str(e)}
 
 @shared_task
@@ -54,10 +54,10 @@ def test_spark_csv():
     try:
         df = get_product_dataframe()
         sample = df.limit(5).toJSON().collect()
-        print("✅ Successfully read CSV and converted to JSON")
+        print(" Successfully read CSV and converted to JSON")
         return sample
     except Exception as e:
-        print(f"❌ Error in test_spark_csv: {e}")
+        print(f" Error in test_spark_csv: {e}")
         return {"error": str(e)}
 
 @shared_task
